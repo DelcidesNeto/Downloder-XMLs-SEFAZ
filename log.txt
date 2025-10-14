@@ -26,3 +26,8 @@ CPF/CNPJ do certificado: 12345678910111, CPF/CNPJ do site: 27410584000120| Os da
 02/10/2025 14:23:39 - CPF/CNPJ do certificado: 27410584000120, CPF/CNPJ do site: 32227646000100| Os dados não batem, então a busca não será realizada...
 02/10/2025 15:56:40 - Erro ao pesquisar a data 01/2004, mês sem resultados para o CNPJ 27410584000120!
 02/10/2025 16:00:05 - Erro ao pesquisar a data 01/2004, mês sem resultados para o CNPJ 27410584000120!
+13/10/2025 16:37:39 - Link de download de 01/2025 obtido com sucesso!
+13/10/2025 16:38:38 - Link de download de 02/2025 obtido com sucesso!
+13/10/2025 16:44:21 - Link de download de 01/2025 obtido com sucesso!
+13/10/2025 16:44:33 - Link de download de 02/2025 obtido com sucesso!
+14/10/2025 09:18:07 - CPF/CNPJ do certificado: , CPF/CNPJ do site: 27410584000120| Os dados não batem, então a busca não será realizada...
