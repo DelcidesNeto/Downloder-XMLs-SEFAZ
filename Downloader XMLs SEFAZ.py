@@ -39,6 +39,7 @@ class App(ctk.CTk):
 
     def __init__(self):
         super().__init__()
+        self.get_baixados()
         self.processo_rodando = False
         self.title("Download de XMLs SEFAZ")
         self.iconbitmap(self.resource_path('xml.ico'))
@@ -516,7 +517,7 @@ class App(ctk.CTk):
             self.zerarJson(criarArquivo=True) # Chama a criação do json, que em tese também o zera
     def get_baixados(self):
         try:
-            with open('baixados.json', 'rt', encoding='utf-8') as arquivoJson:
+            with open(f'baixados.json', 'rt', encoding='utf-8') as arquivoJson:
                 linksJson = json.load(arquivoJson)['baixados']
             return linksJson
         except:
@@ -594,6 +595,14 @@ class App(ctk.CTk):
     #             self.thread.start()
     #     else:
     #         self.show_message('Erro', 'Você já iniciou um processo, cancele ele para iniciar este!')
+    def gerarPaginaHtml(self, lista: list):
+        
+        with open('Downloads.html', 'wt+') as arq:
+            arq.write('<body>\n')
+            for id in lista:
+                arq.write(f'<a href="https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica/resultado/download/historico/arquivo/{id}">{id}</a>\n<br>')
+            arq.write('</body>\n</html>')
+
 
     def reDownload(self):
         def procedure(cpfCnpj: str, autoSelectCert: bool, pathDeDownload: str):
@@ -651,18 +660,25 @@ class App(ctk.CTk):
                     self.botao_cancelar.configure(state='disabled')
                     self.processo_rodando = False
                     break
-                    
+            lista_ids = []      
             if todos_foram_concluidos:
                 xmls_baixados = self.get_baixados()
+                
                 for linha in self.navegador.find_element(By.TAG_NAME, 'table').find_element(By.TAG_NAME, 'tbody').find_elements(By.TAG_NAME, 'tr'):
                     if self.processo_rodando:
                         self.navegador.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
                         id = linha.find_element(By.CLASS_NAME, 'col-arquivo').get_attribute('innerText')
                         if id not in xmls_baixados:
-                            linha.find_element(By.CLASS_NAME, 'col-acoes').find_element(By.ID, id).click()
-                            self.adicionar_baixados(id)
-                            self.navegador.switch_to.window(self.navegador.window_handles[0])
-                            sleep(2)
+                            # linha.find_element(By.CLASS_NAME, 'col-acoes').find_element(By.ID, id).click()
+                            lista_ids.append(id)
+                            # self.adicionar_baixados(id)
+                            # self.navegador.switch_to.window(self.navegador.window_handles[0])
+                self.gerarPaginaHtml(lista_ids)
+                self.navegador.get(os.getcwd()+'/Downloads.html')
+                for xmls in self.navegador.find_elements(By.TAG_NAME, 'a'):
+                    xmls.click()
+                    self.adicionar_baixados(xmls)
+                    sleep(2)
                         
                 self.awaitDownload(pathDeDownload)
                 self.navegador.quit()
@@ -699,7 +715,6 @@ class App(ctk.CTk):
                     shutil.move(caminho_arquivo, pathDeDownload)
 
 
-
     def awaitDownload(self, pathDeDownload: str='', mover_arquivos=True):
         pathDownloadUserSystem = os.path.join(os.path.expanduser('~'), 'Downloads')
         sleep(2)
@@ -718,7 +733,6 @@ class App(ctk.CTk):
                 break
         if mover_arquivos:
             self.moverArquivos(pathDownloadUserSystem, pathDeDownload)
-        
 
 
     def buscarXmls(self, dadosRecord):
