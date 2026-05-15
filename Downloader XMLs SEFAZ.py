@@ -51,6 +51,16 @@ class App(ctk.CTk):
         titulo = ctk.CTkLabel(frame, text="Configurações de Download", font=("Arial", 18, "bold"))
         titulo.pack(pady=10)
 
+        linha_chrome = ctk.CTkFrame(frame, fg_color="transparent")
+        linha_chrome.pack(fill="x", padx=10, pady=5)
+
+        label_chrome = ctk.CTkLabel(linha_chrome, text="Versão do seu Chrome:")
+        label_chrome.pack(side="left")
+
+        self.versao_google_chrome = ctk.CTkEntry(linha_chrome, placeholder_text="Ex: 144", width=80)
+        self.versao_google_chrome.pack(side="left", padx=10)
+
+
         # ----------- DATAS ----------- #
         data_frame = ctk.CTkFrame(frame)
         data_frame.pack(pady=10, fill="x", padx=10)
@@ -175,38 +185,48 @@ class App(ctk.CTk):
         self.navegador.quit()
         
     def show_message(self, titulo, texto):
-        # Cria a janela modal
         popup = ctk.CTkToplevel(self)
         popup.title(titulo)
-        popup.geometry("400x150")
+        popup.geometry("420x200")
         popup.resizable(False, False)
 
+        # Centralizar popup
+        self.update_idletasks()
         largura_janela = self.winfo_width()
         altura_janela = self.winfo_height()
         x_janela = self.winfo_x()
         y_janela = self.winfo_y()
 
-        # Largura e altura do popup
-        largura_popup = popup.winfo_width()
-        altura_popup = popup.winfo_height()
+        largura_popup = 420
+        altura_popup = 200
 
-        # Calcula posição para centralizar
         x = x_janela + (largura_janela // 2) - (largura_popup // 2)
         y = y_janela + (altura_janela // 2) - (altura_popup // 2)
 
-        # Aplica a posição
-        popup.geometry(f"+{x}+{y}")
+        popup.geometry(f"{largura_popup}x{altura_popup}+{x}+{y}")
 
-        # Label com o texto
-        label = ctk.CTkLabel(popup, text=texto)
-        label.pack(pady=30)
+        # 🔽 Área com scroll
+        scroll_frame = ctk.CTkScrollableFrame(
+            popup,
+            width=380,
+            height=110
+        )
+        scroll_frame.pack(padx=10, pady=(10, 5), fill="both", expand=True)
+
+        label = ctk.CTkLabel(
+            scroll_frame,
+            text=texto,
+            wraplength=360,
+            justify="left"
+        )
+        label.pack(anchor="w", padx=10, pady=10)
 
         # Botão OK
         btn = ctk.CTkButton(popup, text="OK", command=popup.destroy)
-        btn.pack(pady=10)
+        btn.pack(pady=(0, 10))
 
-        # Bloqueia interação com a janela principal até fechar o popup
         popup.grab_set()
+
 
 
     def formatar_cnpj_cpf(self, event):
@@ -245,8 +265,11 @@ class App(ctk.CTk):
             modelo = self.modelo_opcao.get()
             pathDeDownload = self.path_salvar.get()
             autoSelectCert = self.certificado_var.get()
+            versao_google_chrome = self.versao_google_chrome.get().strip()
             cpfCnpj = self.cnpj_entry.get().replace('.', '').replace('-', '').replace('/', '')
-            if dataInicial == '':
+            if versao_google_chrome == '':
+                self.show_message('Campos Faltando', 'Preencha o campo Versão do seu Chrome!')
+            elif dataInicial == '':
                 self.show_message('Campos Faltando', 'Preencha a data inicial!')
             elif dataFinal == '':
                 self.show_message('Campos Faltando', 'Preencha a data final!')
@@ -606,91 +629,100 @@ class App(ctk.CTk):
 
     def reDownload(self):
         def procedure(cpfCnpj: str, autoSelectCert: bool, pathDeDownload: str):
-            opcoes = uc.ChromeOptions()
-            if autoSelectCert:
-                CNPJ = self.PegarCnpjAuto()
-            else:
-                CNPJ = cpfCnpj
-            # prefs = {
-            #     "download.default_directory": pathDeDownload,   # muda o path do download
-            #     "download.prompt_for_download": False,         # não perguntar onde salvar
-            #     "download.directory_upgrade": True,            # sobrescreve se necessário
-            #     "safebrowsing.enabled": True,                  # permite downloads "não seguros"
-            #     "profile.default_content_settings.popups": 0,
-            # }
-            # opcoes.add_experimental_option("prefs", prefs)
-            DataLog = datetime.today().astimezone(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
-            self.processo_rodando = True
-            self.navegador = uc.Chrome(headless=False, use_subprocess=True, options=opcoes)
-            self.botao_cancelar.configure(state='normal')
-            
-            if autoSelectCert:
-                threading.Thread(target=self.EsperarParaApertarTab).start()
-            
-            self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
-            CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
-            if CNPJ != CnpjSite:
-                self.AdicionarLog(f'{DataLog} - CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
-                self.adicionarLogApp(f'{DataLog} - CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
-                self.botao_cancelar.configure(state='disabled')
-                self.processo_rodando = False
-                self.navegador.quit()
-            os.makedirs(pathDeDownload, exist_ok=True)
-            if autoSelectCert:
-                threading.Thread(target=self.EsperarParaApertarTab).start()
-            while True:
+            try:
+
+                opcoes = uc.ChromeOptions()
+                if autoSelectCert:
+                    CNPJ = self.PegarCnpjAuto()
+                else:
+                    CNPJ = cpfCnpj
+                # prefs = {
+                #     "download.default_directory": pathDeDownload,   # muda o path do download
+                #     "download.prompt_for_download": False,         # não perguntar onde salvar
+                #     "download.directory_upgrade": True,            # sobrescreve se necessário
+                #     "safebrowsing.enabled": True,                  # permite downloads "não seguros"
+                #     "profile.default_content_settings.popups": 0,
+                # }
+                # opcoes.add_experimental_option("prefs", prefs)
+                DataLog = datetime.today().astimezone(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
+                self.processo_rodando = True
+                self.navegador = uc.Chrome(headless=False, use_subprocess=True, options=opcoes, version_main=int(self.versao_google_chrome.get()))
+                self.botao_cancelar.configure(state='normal')
+                
+                if autoSelectCert:
+                    threading.Thread(target=self.EsperarParaApertarTab).start()
+                
                 self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
-                try:
-                    WebDriverWait(self.navegador, 10).until(
-                        lambda driver: driver.find_element(By.NAME, "g-recaptcha-response").get_attribute("value") != ""
-                    )
-                    self.navegador.find_element(By.ID, 'btnHistoricoDownload').click()
-                    break
-                    
-                except:
-                    self.navegador.refresh()
-                    continue
-            todos_foram_concluidos = True
-            for situacao in self.navegador.find_element(By.TAG_NAME, 'table').find_element(By.TAG_NAME, 'tbody').find_elements(By.TAG_NAME, 'tr'): # Verifica se está tudo disponível
-                situacao_xml = situacao.find_element(By.CLASS_NAME, 'col-situacao').get_attribute('innerText').lower()
-                if situacao_xml != 'concluído':
-                    todos_foram_concluidos = False
-                    self.navegador.quit()
-                    self.adicionarLogApp(f'f{DataLog} - Existem XMLS que ainda não estão prontos para serem baixados, por este motivo o download não foi iniciado...')
+                CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
+                if CNPJ != CnpjSite:
+                    self.AdicionarLog(f'{DataLog} - CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
+                    self.adicionarLogApp(f'{DataLog} - CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
                     self.botao_cancelar.configure(state='disabled')
                     self.processo_rodando = False
-                    break
-            lista_ids = []      
-            if todos_foram_concluidos:
-                xmls_baixados = self.get_baixados()
-                
-                for linha in self.navegador.find_element(By.TAG_NAME, 'table').find_element(By.TAG_NAME, 'tbody').find_elements(By.TAG_NAME, 'tr'):
-                    if self.processo_rodando:
-                        self.navegador.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
-                        id = linha.find_element(By.CLASS_NAME, 'col-arquivo').get_attribute('innerText')
-                        if id not in xmls_baixados:
-                            # linha.find_element(By.CLASS_NAME, 'col-acoes').find_element(By.ID, id).click()
-                            lista_ids.append(id)
-                            # self.adicionar_baixados(id)
-                            # self.navegador.switch_to.window(self.navegador.window_handles[0])
-                self.gerarPaginaHtml(lista_ids)
-                self.navegador.get(os.getcwd()+'/Downloads.html')
-                for xmls in self.navegador.find_elements(By.TAG_NAME, 'a'):
-                    xmls.click()
-                    self.adicionar_baixados(xmls)
-                    sleep(2)
+                    self.navegador.quit()
+                os.makedirs(pathDeDownload, exist_ok=True)
+                if autoSelectCert:
+                    threading.Thread(target=self.EsperarParaApertarTab).start()
+                while True:
+                    self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
+                    try:
+                        WebDriverWait(self.navegador, 10).until(
+                            lambda driver: driver.find_element(By.NAME, "g-recaptcha-response").get_attribute("value") != ""
+                        )
+                        self.navegador.find_element(By.ID, 'btnHistoricoDownload').click()
+                        break
                         
-                self.awaitDownload(pathDeDownload)
-                self.navegador.quit()
-                self.adicionarLogApp(f'f{DataLog} - Verifique a sua pasta de downloads localizada em {pathDeDownload}')
-                self.botao_cancelar.configure(state='disabled')
+                    except:
+                        self.navegador.refresh()
+                        continue
+                todos_foram_concluidos = True
+                for situacao in self.navegador.find_element(By.TAG_NAME, 'table').find_element(By.TAG_NAME, 'tbody').find_elements(By.TAG_NAME, 'tr'): # Verifica se está tudo disponível
+                    situacao_xml = situacao.find_element(By.CLASS_NAME, 'col-situacao').get_attribute('innerText').lower()
+                    if situacao_xml != 'concluído':
+                        todos_foram_concluidos = False
+                        self.navegador.quit()
+                        self.adicionarLogApp(f'f{DataLog} - Existem XMLS que ainda não estão prontos para serem baixados, por este motivo o download não foi iniciado...')
+                        self.botao_cancelar.configure(state='disabled')
+                        self.processo_rodando = False
+                        break
+                lista_ids = []      
+                if todos_foram_concluidos:
+                    xmls_baixados = self.get_baixados()
+                    
+                    for linha in self.navegador.find_element(By.TAG_NAME, 'table').find_element(By.TAG_NAME, 'tbody').find_elements(By.TAG_NAME, 'tr'):
+                        if self.processo_rodando:
+                            self.navegador.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
+                            id = linha.find_element(By.CLASS_NAME, 'col-arquivo').get_attribute('innerText')
+                            if id not in xmls_baixados:
+                                # linha.find_element(By.CLASS_NAME, 'col-acoes').find_element(By.ID, id).click()
+                                lista_ids.append(id)
+                                # self.adicionar_baixados(id)
+                                # self.navegador.switch_to.window(self.navegador.window_handles[0])
+                    self.gerarPaginaHtml(lista_ids)
+                    self.navegador.get(os.getcwd()+'/Downloads.html')
+                    for xmls in self.navegador.find_elements(By.TAG_NAME, 'a'):
+                        xmls.click()
+                        self.adicionar_baixados(xmls)
+                        sleep(2)
+                            
+                    self.awaitDownload(pathDeDownload)
+                    self.navegador.quit()
+                    self.adicionarLogApp(f'f{DataLog} - Verifique a sua pasta de downloads localizada em {pathDeDownload}')
+                    self.botao_cancelar.configure(state='disabled')
+                    self.processo_rodando = False
+            except Exception as e:
                 self.processo_rodando = False
+                self.botao_cancelar.configure(state='disabled')
+                self.show_message('ERRO', str(e))
 
         
         pathDeDownload = self.path_salvar.get()
         autoSelectCert = self.certificado_var.get()
+        versao_google_chrome = self.versao_google_chrome.get()
         cpfCnpj = self.cnpj_entry.get().replace('.', '').replace('-', '').replace('/', '')
-        if pathDeDownload == '':
+        if versao_google_chrome == '':
+            self.show_message('Campos Faltando', 'Preencha o campo Versão do seu Chrome!')
+        elif pathDeDownload == '':
             self.show_message('Campos Faltando', 'Preencha o local de download!')
         elif not autoSelectCert and cpfCnpj == '':
             self.show_message('Campos Faltando', 'Preencha o campo de CPF/CNPJ!')
@@ -736,97 +768,103 @@ class App(ctk.CTk):
 
 
     def buscarXmls(self, dadosRecord):
-        opcoes = uc.ChromeOptions()
-        if (dadosRecord.AutoSelectCert):
-            CNPJ = self.PegarCnpjAuto()
-        else:
-            CNPJ = dadosRecord.CpfCnpj
-        # prefs = {
-        #     "download.default_directory": dadosRecord.PathDeDownload+f'/{CNPJ}',   # muda o path do download
-        #     "download.prompt_for_download": False,         # não perguntar onde salvar
-        #     "download.directory_upgrade": True,            # sobrescreve se necessário
-        #     "safebrowsing.enabled": True,                  # permite downloads "não seguros"
-        #     "profile.default_content_settings.popups": 0
-        # }
-        # opcoes.add_experimental_option("prefs", prefs)
-        self.processo_rodando = True
-        self.navegador = uc.Chrome(headless=False, use_subprocess=True, options=opcoes) # version_main=140
-        self.botao_cancelar.configure(state='normal')
+        try:
+            opcoes = uc.ChromeOptions()
+            if (dadosRecord.AutoSelectCert):
+                CNPJ = self.PegarCnpjAuto()
+            else:
+                CNPJ = dadosRecord.CpfCnpj
+            # prefs = {
+            #     "download.default_directory": dadosRecord.PathDeDownload+f'/{CNPJ}',   # muda o path do download
+            #     "download.prompt_for_download": False,         # não perguntar onde salvar
+            #     "download.directory_upgrade": True,            # sobrescreve se necessário
+            #     "safebrowsing.enabled": True,                  # permite downloads "não seguros"
+            #     "profile.default_content_settings.popups": 0
+            # }
+            # opcoes.add_experimental_option("prefs", prefs)
+            self.processo_rodando = True
+            self.navegador = uc.Chrome(headless=False, use_subprocess=True, options=opcoes, version_main=int(self.versao_google_chrome.get())) # version_main=140
+            self.botao_cancelar.configure(state='normal')
 
-        if dadosRecord.AutoSelectCert:
-            threading.Thread(target=self.EsperarParaApertarTab).start()
-
-
-        self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
+            if dadosRecord.AutoSelectCert:
+                threading.Thread(target=self.EsperarParaApertarTab).start()
 
 
-        CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
+            self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
 
-        if CNPJ != CnpjSite:
-            self.AdicionarLog(f'CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
-            self.adicionarLogApp(f'CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
-            self.botao_cancelar.configure(state='disabled')
-            self.processo_rodando = False
-            self.navegador.quit()
+            Select(self.navegador.find_element(By.ID, 'cmpCnpj')).select_by_value(CNPJ)
+            CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
 
-        else:
-            anoInical = self.GetAno(dadosRecord.MesAnoInicial)
-            mesInicial = self.GetMes(dadosRecord.MesAnoInicial)
-            anoFinal = self.GetAno(dadosRecord.MesAnoFinal)
-            mesFinal =  self.GetMes(dadosRecord.MesAnoFinal)
-            quantidadeDeMeses = self.calcular_diferenca_em_meses(dadosRecord.MesAnoInicial, dadosRecord.MesAnoFinal)+1
-            primeiroLoop = True
-            for c in range(0, quantidadeDeMeses):
-                CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
-                encontrouDocumentos = True
-                DataLog = datetime.today().astimezone(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
-                primeiroLoop = False
-                Data = f'0{mesInicial}/{anoInical}' if mesInicial < 10 else f'{mesInicial}/{anoInical}'
-                if CNPJ != CnpjSite:
-                    self.AdicionarLog(f'{DataLog} - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = {Data}')
-                    self.adicionarLogApp(f'{DataLog} - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = {Data}')
-                    self.navegador.quit()
-                    exit()
-                Erro1 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
-                if Erro1 != '':
-                    Erro2 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
-                    if Erro2 != '':
-                        Erro3 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
-                        if Erro3 != '':
-                            self.AdicionarLog(f'{DataLog} - Erro ao pesquisar a data {Data}, mês sem resultados para o CNPJ {CNPJ}!')
-                            self.adicionarLogApp(f'{DataLog} - Erro ao pesquisar a data {Data}, mês sem resultados para o CNPJ {CNPJ}!')
-                            self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
-                            encontrouDocumentos = False
-                if encontrouDocumentos:
-                    self.navegador.find_element(By.XPATH, '//*[@id="content"]/div[2]/div/button').click()
-                    sleep(1)
-                    self.navegador.find_element(By.ID, 'dnwld-all-btn-ok').click()
-                    sleep(1)
-                    # linkBase = 'https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica/resultado/download/historico/arquivo/'
-                    # restoLink = self.navegador.find_element(By.TAG_NAME, 'table').find_element(By.TAG_NAME, 'tbody').find_elements(By.TAG_NAME, 'tr')[0].find_element(By.CLASS_NAME, 'col-arquivo').get_attribute('innerText')
-                    # linkDownload = linkBase+restoLink
-                    # self.adicionarLinks(linkDownload)
-                    # self.AdicionarLog(f'{DataLog} - Link de download de {Data} obtido com sucesso!')
-                    # self.adicionarLogApp(f'{DataLog} - Link de download de {Data} obtido com sucesso!')
-                    self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
-                if not primeiroLoop:
-                    if mesInicial == mesFinal and anoInical == anoFinal:
-                        # self.adicionarLogApp(f"{DataLog} - Fim das pesquisas, preparando-se para realizar os downloads...")
+            if CNPJ != CnpjSite:
+                self.AdicionarLog(f'CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
+                self.adicionarLogApp(f'CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
+                self.botao_cancelar.configure(state='disabled')
+                self.processo_rodando = False
+                self.navegador.quit()
+
+            else:
+                anoInical = self.GetAno(dadosRecord.MesAnoInicial)
+                mesInicial = self.GetMes(dadosRecord.MesAnoInicial)
+                anoFinal = self.GetAno(dadosRecord.MesAnoFinal)
+                mesFinal =  self.GetMes(dadosRecord.MesAnoFinal)
+                quantidadeDeMeses = self.calcular_diferenca_em_meses(dadosRecord.MesAnoInicial, dadosRecord.MesAnoFinal)+1
+                primeiroLoop = True
+                for c in range(0, quantidadeDeMeses):
+                    CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
+                    encontrouDocumentos = True
+                    DataLog = datetime.today().astimezone(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
+                    primeiroLoop = False
+                    Data = f'0{mesInicial}/{anoInical}' if mesInicial < 10 else f'{mesInicial}/{anoInical}'
+                    if CNPJ != CnpjSite:
+                        self.AdicionarLog(f'{DataLog} - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = {Data}')
+                        self.adicionarLogApp(f'{DataLog} - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = {Data}')
                         self.navegador.quit()
-                        self.adicionarLogApp(f"{DataLog} - Fim das pesquisas, inicie o download dos xmls assim que a sefaz disponibilizar...")
-                        self.botao_cancelar.configure(state='disabled')
-                        self.processo_rodando = False
+                        exit()
+                    Erro1 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
+                    if Erro1 != '':
+                        Erro2 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
+                        if Erro2 != '':
+                            Erro3 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
+                            if Erro3 != '':
+                                self.AdicionarLog(f'{DataLog} - Erro ao pesquisar a data {Data}, mês sem resultados para o CNPJ {CNPJ}!')
+                                self.adicionarLogApp(f'{DataLog} - Erro ao pesquisar a data {Data}, mês sem resultados para o CNPJ {CNPJ}!')
+                                self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
+                                encontrouDocumentos = False
+                    if encontrouDocumentos:
+                        self.navegador.find_element(By.XPATH, '//*[@id="content"]/div[2]/div/button').click()
+                        sleep(1)
+                        self.navegador.find_element(By.ID, 'dnwld-all-btn-ok').click()
+                        self.AdicionarLog(f'{DataLog} - Mês {Data} do CNPJ {CNPJ} baixado com sucesso!!!')
+                        sleep(1)
+                        # linkBase = 'https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica/resultado/download/historico/arquivo/'
+                        # restoLink = self.navegador.find_element(By.TAG_NAME, 'table').find_element(By.TAG_NAME, 'tbody').find_elements(By.TAG_NAME, 'tr')[0].find_element(By.CLASS_NAME, 'col-arquivo').get_attribute('innerText')
+                        # linkDownload = linkBase+restoLink
+                        # self.adicionarLinks(linkDownload)
+                        # self.AdicionarLog(f'{DataLog} - Link de download de {Data} obtido com sucesso!')
+                        # self.adicionarLogApp(f'{DataLog} - Link de download de {Data} obtido com sucesso!')
+                        self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
+                    if not primeiroLoop:
+                        if mesInicial == mesFinal and anoInical == anoFinal:
+                            # self.adicionarLogApp(f"{DataLog} - Fim das pesquisas, preparando-se para realizar os downloads...")
+                            self.navegador.quit()
+                            self.adicionarLogApp(f"{DataLog} - Fim das pesquisas, inicie o download dos xmls assim que a sefaz disponibilizar...")
+                            self.botao_cancelar.configure(state='disabled')
+                            self.processo_rodando = False
 
-                        # self.adicionarLogApp(f'{DataLog} - O sistema irá aguardar 1 minuto antes de iniciar o download por questões de segurança')
-                        # sleep(60)
-                        # self.adicionarLogApp(f'{DataLog} - Downloads iniciados, aguarde até a conclusão...')
-                        #self.realizarDownloadXmls(pathDownload=dadosRecord.PathDeDownload)
-                        # self.adicionarLogApp(f'f{DataLog} - Verifique a sua pasta de downloads localizada em {dadosRecord.PathDeDownload}')
-                if mesInicial < 13:
-                    mesInicial += 1
-                if mesInicial == 13:
-                    mesInicial = 1
-                    anoInical += 1
+                            # self.adicionarLogApp(f'{DataLog} - O sistema irá aguardar 1 minuto antes de iniciar o download por questões de segurança')
+                            # sleep(60)
+                            # self.adicionarLogApp(f'{DataLog} - Downloads iniciados, aguarde até a conclusão...')
+                            #self.realizarDownloadXmls(pathDownload=dadosRecord.PathDeDownload)
+                            # self.adicionarLogApp(f'f{DataLog} - Verifique a sua pasta de downloads localizada em {dadosRecord.PathDeDownload}')
+                    if mesInicial < 13:
+                        mesInicial += 1
+                    if mesInicial == 13:
+                        mesInicial = 1
+                        anoInical += 1
+        except Exception as e:
+            self.processo_rodando = False
+            self.botao_cancelar.configure(state='disabled')
+            self.show_message('ERRO', str(e))
 
 
 if __name__ == "__main__":
