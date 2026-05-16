@@ -19,3 +19,5 @@
 24/04/2026 15:30:37 - Erro ao pesquisar a data 01/2026, mês sem resultados para o CNPJ 58021097000107!
 24/04/2026 15:31:01 - Erro ao pesquisar a data 02/2026, mês sem resultados para o CNPJ 58021097000107!
 24/04/2026 15:31:24 - Erro ao pesquisar a data 03/2026, mês sem resultados para o CNPJ 58021097000107!
+CPF/CNPJ do certificado: 08476045000149, CPF/CNPJ do site: 08476045000220
+08476045000149| Os dados não batem, então a busca não será realizada...

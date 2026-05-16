@@ -1,0 +1,15 @@
+CPF/CNPJ do certificado: 08476045000149, CPF/CNPJ do site: 08476045000220
+08476045000149| Os dados não batem, então a busca não será realizada...
+CPF/CNPJ do certificado: 08476045000149, CPF/CNPJ do site: 08476045000220
+08476045000149| Os dados não batem, então a busca não será realizada...
+CPF/CNPJ do certificado: 08476045000149, CPF/CNPJ do site: 08476045000220
+08476045000149| Os dados não batem, então a busca não será realizada...
+CPF/CNPJ do certificado: 08476045000149, CPF/CNPJ do site: 08476045000220
+08476045000149| Os dados não batem, então a busca não será realizada...
+15/05/2026 17:29:11 - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = 01/2000
+15/05/2026 17:29:35 - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = 01/2000
+15/05/2026 17:31:22 - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = 01/2000
+15/05/2026 17:33:08 - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = 01/2000
+15/05/2026 17:34:09 - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = 01/2000
+15/05/2026 17:35:01 - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = 01/2000
+15/05/2026 17:58:43 - Erro ao pesquisar a data 01/2025, mês sem resultados para o CNPJ 58021097000107!

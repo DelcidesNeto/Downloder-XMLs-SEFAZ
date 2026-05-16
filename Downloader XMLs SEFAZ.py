@@ -427,7 +427,7 @@ class App(ctk.CTk):
         return MyRecord(MesAnoInicial=MesAnoInicial, MesAnoFinal=MesAnoFinal, PathDeDownload=PathDeDownload, AutoSelectCert=AutoSelectCert, ModeloDoDocumento=ModeloDoDocumento)
 
 
-    def fazerPesquisa(self, navegador: uc.Chrome, data: str, modeloDoDocumento: str):
+    def fazerPesquisa(self, navegador: uc.Chrome, data: str, modeloDoDocumento: str, CNPJ: str):
         while True:
             Status = ''
             try:
@@ -435,6 +435,7 @@ class App(ctk.CTk):
             except:
                 navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica') #Caso ele não encontre o label da data, significa que está na página de erro ainda
                 sleep(1)
+                Select(self.navegador.find_element(By.NAME, 'cmpCnpj')).select_by_value(CNPJ)
                 navegador.find_element(By.ID, 'cmpDataInicial').click()
             sleep(1)
             navegador.find_element(By.ID, 'cmpDataInicial').send_keys(f'01/{data}')
@@ -792,8 +793,8 @@ class App(ctk.CTk):
 
             self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
 
-            Select(self.navegador.find_element(By.ID, 'cmpCnpj')).select_by_value(CNPJ)
-            CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
+            Select(self.navegador.find_element(By.NAME, 'cmpCnpj')).select_by_value(CNPJ)
+            CnpjSite = Select(self.navegador.find_element(By.NAME, 'cmpCnpj')).first_selected_option.text
 
             if CNPJ != CnpjSite:
                 self.AdicionarLog(f'CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
@@ -810,7 +811,8 @@ class App(ctk.CTk):
                 quantidadeDeMeses = self.calcular_diferenca_em_meses(dadosRecord.MesAnoInicial, dadosRecord.MesAnoFinal)+1
                 primeiroLoop = True
                 for c in range(0, quantidadeDeMeses):
-                    CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
+                    Select(self.navegador.find_element(By.NAME, 'cmpCnpj')).select_by_value(CNPJ)
+                    CnpjSite = Select(self.navegador.find_element(By.NAME, 'cmpCnpj')).first_selected_option.text
                     encontrouDocumentos = True
                     DataLog = datetime.today().astimezone(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
                     primeiroLoop = False
@@ -820,11 +822,11 @@ class App(ctk.CTk):
                         self.adicionarLogApp(f'{DataLog} - O CPF/CNPJ do certificado não confere com o CPF/CNPJ do site, caso queira continuar de onde parou configure o mes/ano-inicial = {Data}')
                         self.navegador.quit()
                         exit()
-                    Erro1 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
+                    Erro1 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento, CNPJ=CNPJ)
                     if Erro1 != '':
-                        Erro2 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
+                        Erro2 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento, CNPJ=CNPJ)
                         if Erro2 != '':
-                            Erro3 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento)
+                            Erro3 = self.fazerPesquisa(navegador=self.navegador, data=Data, modeloDoDocumento=dadosRecord.ModeloDoDocumento, CNPJ=CNPJ)
                             if Erro3 != '':
                                 self.AdicionarLog(f'{DataLog} - Erro ao pesquisar a data {Data}, mês sem resultados para o CNPJ {CNPJ}!')
                                 self.adicionarLogApp(f'{DataLog} - Erro ao pesquisar a data {Data}, mês sem resultados para o CNPJ {CNPJ}!')
