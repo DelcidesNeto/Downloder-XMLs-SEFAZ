@@ -654,7 +654,8 @@ class App(ctk.CTk):
                     threading.Thread(target=self.EsperarParaApertarTab).start()
                 
                 self.navegador.get('https://nfeweb.sefaz.go.gov.br/nfeweb/sites/nfe/consulta-publica')
-                CnpjSite = self.navegador.find_element(By.XPATH, '//*[@id="cmpCnpj"]').get_attribute('innerText')
+                Select(self.navegador.find_element(By.NAME, 'cmpCnpj')).select_by_value(CNPJ)
+                CnpjSite = Select(self.navegador.find_element(By.NAME, 'cmpCnpj')).first_selected_option.text
                 if CNPJ != CnpjSite:
                     self.AdicionarLog(f'{DataLog} - CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
                     self.adicionarLogApp(f'{DataLog} - CPF/CNPJ do certificado: {CNPJ}, CPF/CNPJ do site: {CnpjSite}| Os dados não batem, então a busca não será realizada...')
