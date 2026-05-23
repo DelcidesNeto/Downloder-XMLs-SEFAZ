@@ -695,7 +695,7 @@ class App(ctk.CTk):
                         if self.processo_rodando:
                             self.navegador.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
                             id = linha.find_element(By.CLASS_NAME, 'col-arquivo').get_attribute('innerText')
-                            if id not in xmls_baixados:
+                            if id not in xmls_baixados and CNPJ in id:
                                 # linha.find_element(By.CLASS_NAME, 'col-acoes').find_element(By.ID, id).click()
                                 lista_ids.append(id)
                                 # self.adicionar_baixados(id)

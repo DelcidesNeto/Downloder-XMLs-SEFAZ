@@ -21,3 +21,16 @@
 24/04/2026 15:31:24 - Erro ao pesquisar a data 03/2026, mês sem resultados para o CNPJ 58021097000107!
 CPF/CNPJ do certificado: 08476045000149, CPF/CNPJ do site: 08476045000220
 08476045000149| Os dados não batem, então a busca não será realizada...
+23/05/2026 09:12:54 - Erro ao pesquisar a data 04/2025, mês sem resultados para o CNPJ 08476045000220!
+23/05/2026 09:13:17 - Erro ao pesquisar a data 05/2025, mês sem resultados para o CNPJ 08476045000220!
+23/05/2026 09:13:38 - Mês 06/2025 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:13:48 - Mês 07/2025 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:13:56 - Mês 08/2025 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:14:04 - Mês 09/2025 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:14:13 - Mês 10/2025 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:14:22 - Mês 11/2025 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:14:31 - Mês 12/2025 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:14:40 - Mês 01/2026 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:14:48 - Mês 02/2026 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:14:56 - Mês 03/2026 do CNPJ 08476045000220 baixado com sucesso!!!
+23/05/2026 09:15:29 - Mês 04/2026 do CNPJ 08476045000220 baixado com sucesso!!!
