@@ -680,6 +680,7 @@ class App(ctk.CTk):
                 todos_foram_concluidos = True
                 for situacao in self.navegador.find_element(By.TAG_NAME, 'table').find_element(By.TAG_NAME, 'tbody').find_elements(By.TAG_NAME, 'tr'): # Verifica se está tudo disponível
                     situacao_xml = situacao.find_element(By.CLASS_NAME, 'col-situacao').get_attribute('innerText').lower()
+                    
                     if situacao_xml != 'concluído':
                         todos_foram_concluidos = False
                         self.navegador.quit()
@@ -695,7 +696,9 @@ class App(ctk.CTk):
                         if self.processo_rodando:
                             self.navegador.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
                             id = linha.find_element(By.CLASS_NAME, 'col-arquivo').get_attribute('innerText')
-                            if id not in xmls_baixados and CNPJ in id:
+                            observacao = linha.find_element(By.CLASS_NAME, 'col-observacoes').get_attribute('innerText').lower()
+
+                            if id not in xmls_baixados and CNPJ in id and observacao != 'sem resultados':
                                 # linha.find_element(By.CLASS_NAME, 'col-acoes').find_element(By.ID, id).click()
                                 lista_ids.append(id)
                                 # self.adicionar_baixados(id)
