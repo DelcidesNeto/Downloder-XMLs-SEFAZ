@@ -471,15 +471,11 @@ class App(ctk.CTk):
             # Procurar por padrões de CNPJ (14 dígitos) no resultado
             cnpjs = re.findall(r'\b\d{2}\.\d{3}\.\d{3}\/\d{4}\-\d{2}\b', resultado)
             if cnpjs:
-                return cnpjs[0]  # Retorna o primeiro CNPJ encontrado
-            else:
-                # Procurar por padrão numérico que pode ser um CNPJ sem formatação
-                cnpjs_sem_formato = re.findall(r'\b\d{14}\b', resultado)
-                if cnpjs_sem_formato:
-                    cnpj = cnpjs_sem_formato[0]
-                    # Formatar o CNPJ
-                    return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}".replace(".", "").replace("/", "").replace("-", "")
-                
+                return cnpjs[0].replace(".", "").replace("/", "").replace("-", "")
+            cnpjs_sem_formato = re.findall(r'\b\d{14}\b', resultado)
+            if cnpjs_sem_formato:
+                return cnpjs_sem_formato[0]
+
             print("Nenhum CNPJ encontrado nos certificados")
             return None
         except Exception as e:
@@ -629,14 +625,20 @@ class App(ctk.CTk):
 
 
     def reDownload(self):
-        def procedure(cpfCnpj: str, autoSelectCert: bool, pathDeDownload: str):
+        def procedure(cpfCnpj: str, autoSelectCert: bool, pathBase: str):
             try:
 
                 opcoes = uc.ChromeOptions()
                 if autoSelectCert:
                     CNPJ = self.PegarCnpjAuto()
+                    if CNPJ:
+                        CNPJ = CNPJ.replace('.', '').replace('-', '').replace('/', '')
                 else:
                     CNPJ = cpfCnpj
+                if not CNPJ:
+                    raise Exception('Não foi possível obter o CPF/CNPJ do certificado.')
+
+                pathDeDownload = os.path.normpath(os.path.join(pathBase, CNPJ))
                 # prefs = {
                 #     "download.default_directory": pathDeDownload,   # muda o path do download
                 #     "download.prompt_for_download": False,         # não perguntar onde salvar
@@ -662,6 +664,7 @@ class App(ctk.CTk):
                     self.botao_cancelar.configure(state='disabled')
                     self.processo_rodando = False
                     self.navegador.quit()
+                    return
                 os.makedirs(pathDeDownload, exist_ok=True)
                 if autoSelectCert:
                     threading.Thread(target=self.EsperarParaApertarTab).start()
@@ -684,7 +687,7 @@ class App(ctk.CTk):
                     if situacao_xml != 'concluído':
                         todos_foram_concluidos = False
                         self.navegador.quit()
-                        self.adicionarLogApp(f'f{DataLog} - Existem XMLS que ainda não estão prontos para serem baixados, por este motivo o download não foi iniciado...')
+                        self.adicionarLogApp(f'{DataLog} - Existem XMLS que ainda não estão prontos para serem baixados, por este motivo o download não foi iniciado...')
                         self.botao_cancelar.configure(state='disabled')
                         self.processo_rodando = False
                         break
@@ -704,15 +707,15 @@ class App(ctk.CTk):
                                 # self.adicionar_baixados(id)
                                 # self.navegador.switch_to.window(self.navegador.window_handles[0])
                     self.gerarPaginaHtml(lista_ids)
-                    self.navegador.get(os.getcwd()+'/Downloads.html')
+                    self.navegador.get(os.path.join(os.getcwd(), 'Downloads.html'))
                     for xmls in self.navegador.find_elements(By.TAG_NAME, 'a'):
                         xmls.click()
-                        self.adicionar_baixados(xmls)
+                        self.adicionar_baixados(xmls.text)
                         sleep(2)
                             
-                    self.awaitDownload(pathDeDownload)
+                    self.awaitDownload(pathDeDownload, cpfCnpj=CNPJ)
                     self.navegador.quit()
-                    self.adicionarLogApp(f'f{DataLog} - Verifique a sua pasta de downloads localizada em {pathDeDownload}')
+                    self.adicionarLogApp(f'{DataLog} - Verifique a sua pasta de downloads localizada em {pathDeDownload}')
                     self.botao_cancelar.configure(state='disabled')
                     self.processo_rodando = False
             except Exception as e:
@@ -734,25 +737,44 @@ class App(ctk.CTk):
         else:
             DataLog = datetime.today().astimezone(pytz.timezone('America/Sao_Paulo')).strftime('%d/%m/%Y %H:%M:%S')
             self.adicionarLogApp(f'{DataLog} - Downloads iniciados, aguarde até a conclusão...')
-            self.thread = threading.Thread(target=procedure, args=(cpfCnpj, autoSelectCert, pathDeDownload+'/'+cpfCnpj), daemon=True)
+            self.thread = threading.Thread(target=procedure, args=(cpfCnpj, autoSelectCert, pathDeDownload), daemon=True)
             self.thread.start()
 
-    def moverArquivos(self, pathDownloadUserSystem: str, pathDeDownload: str):
-        arquivos = os.listdir(pathDownloadUserSystem)
-        cpfCnpj = pathDeDownload[pathDeDownload.rfind('/')+1:]
-        for arquivo in arquivos:
+    def moverArquivos(self, pathDownloadUserSystem: str, pathDeDownload: str, cpfCnpj: str = ''):
+        pathDeDownload = os.path.normpath(pathDeDownload)
+        os.makedirs(pathDeDownload, exist_ok=True)
+        if not cpfCnpj:
+            cpfCnpj = os.path.basename(pathDeDownload)
+
+        for arquivo in os.listdir(pathDownloadUserSystem):
+            if not arquivo.lower().endswith('.zip'):
+                continue
+            if cpfCnpj and cpfCnpj not in arquivo:
+                continue
+
             caminho_arquivo = os.path.join(pathDownloadUserSystem, arquivo)
+            if not os.path.isfile(caminho_arquivo):
+                continue
+
+            try:
+                data_criacao = datetime.fromtimestamp(os.path.getmtime(caminho_arquivo)).date()
+            except FileNotFoundError:
+                continue
+
+            if data_criacao != date.today():
+                continue
+
             destino = os.path.join(pathDeDownload, arquivo)
-            data_criacao = datetime.fromtimestamp(os.path.getmtime(caminho_arquivo)).date()
-            if data_criacao == date.today() and cpfCnpj in caminho_arquivo:
-                try:
-                    shutil.move(caminho_arquivo, pathDeDownload)
-                except:
+            try:
+                if os.path.exists(destino):
                     os.remove(destino)
-                    shutil.move(caminho_arquivo, pathDeDownload)
+                shutil.move(caminho_arquivo, destino)
+            except FileNotFoundError:
+                # Arquivo sumiu entre a listagem e a movimentação (Chrome/antivirus)
+                continue
 
 
-    def awaitDownload(self, pathDeDownload: str='', mover_arquivos=True):
+    def awaitDownload(self, pathDeDownload: str='', mover_arquivos=True, cpfCnpj: str = ''):
         pathDownloadUserSystem = os.path.join(os.path.expanduser('~'), 'Downloads')
         sleep(2)
         while True:
@@ -761,7 +783,10 @@ class App(ctk.CTk):
             arquivos = os.listdir(pathDownloadUserSystem)
             for arquivo in arquivos:
                 caminho = os.path.join(pathDownloadUserSystem, arquivo)
-                data_criacao = datetime.fromtimestamp(os.path.getmtime(caminho)).date()
+                try:
+                    data_criacao = datetime.fromtimestamp(os.path.getmtime(caminho)).date()
+                except FileNotFoundError:
+                    continue
                 if data_criacao == date.today():
                     if '.crdownload' in arquivo:
                         esperar = True
@@ -769,7 +794,7 @@ class App(ctk.CTk):
             if esperar == False:
                 break
         if mover_arquivos:
-            self.moverArquivos(pathDownloadUserSystem, pathDeDownload)
+            self.moverArquivos(pathDownloadUserSystem, pathDeDownload, cpfCnpj=cpfCnpj)
 
 
     def buscarXmls(self, dadosRecord):
