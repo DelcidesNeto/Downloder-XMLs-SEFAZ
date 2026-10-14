@@ -700,8 +700,9 @@ class App(ctk.CTk):
                             self.navegador.find_element(By.TAG_NAME, 'body').send_keys(Keys.PAGE_DOWN)
                             id = linha.find_element(By.CLASS_NAME, 'col-arquivo').get_attribute('innerText')
                             observacao = linha.find_element(By.CLASS_NAME, 'col-observacoes').get_attribute('innerText').lower()
+                            situacao_xml = situacao.find_element(By.CLASS_NAME, 'col-situacao').get_attribute('innerText').lower()
 
-                            if id not in xmls_baixados and CNPJ in id and observacao != 'sem resultados':
+                            if id not in xmls_baixados and CNPJ in id and observacao != 'sem resultados' and situacao_xml == 'concluído':
                                 # linha.find_element(By.CLASS_NAME, 'col-acoes').find_element(By.ID, id).click()
                                 lista_ids.append(id)
                                 # self.adicionar_baixados(id)
